@@ -1,14 +1,13 @@
 package main
 
 import (
-	"math/rand"
+	"../rbm"
 	"flag"
 	"fmt"
-	"strings"
+	"math/rand"
 	"strconv"
+	"strings"
 )
-
-import . "rbm"
 
 func PrintUsage() {
 	fmt.Println("Usage: rbm-cli action <input1> <input2> >output< [options]")
@@ -41,7 +40,7 @@ func main() {
 	var seed int64
 	var sample bool
 	var iters int
-	
+
 	flag.StringVar(&numhstr, "hidden", "", "number of hidden units (comma-separated list)")
 	flag.IntVar(&numv, "visible", 0, "number of visible units")
 	flag.Int64Var(&seed, "seed", 1, "random seed to use")
@@ -66,12 +65,12 @@ func main() {
 	switch fmt.Sprintf("%s%d", cmd, len(args)) {
 	case "train2",
 		"sampledown1", "sampleup2",
-		"reconstruct3", 
+		"reconstruct3",
 		"error2":
 	default:
 		fmt.Println("Invalid usage")
 		PrintUsage()
-		return 
+		return
 	}
 
 	rand.Seed(seed)
@@ -93,7 +92,7 @@ func main() {
 		prev := numv + 1
 		for i, h := range numh {
 			h++
-			W[i] = RandomMatrix(prev * h, 1.0)
+			W[i] = RandomMatrix(prev*h, 1.0)
 			fmt.Printf("Generating random %dx%d weight matrix\n", prev, h)
 			prev = h
 		}
@@ -112,7 +111,7 @@ func main() {
 		fmt.Printf("\nTotal average error: %f\n", error)
 
 	case "reconstruct":
-		
+
 		rbm := LoadRBM(numv, args[1])
 
 		visible, _ := LoadVectors(args[0], numv, "Visible")
@@ -130,7 +129,7 @@ func main() {
 	case "error":
 
 		visible, numv := LoadVectors(args[0], numv, "Visible")
-		
+
 		rbm := LoadRBM(numv, args[1])
 
 		error := rbm.Error(visible, sample)
@@ -138,69 +137,69 @@ func main() {
 		fmt.Printf("\nTotal average error: %f\n", error)
 
 		/*
-	case "sampledown":
+			case "sampledown":
 
-		rbm := LoadMachine(numv, numh, flag.Arg(1))
+				rbm := LoadMachine(numv, numh, flag.Arg(1))
 
-		for i := range rbm.H {
-			
-			fmt.Printf("Visible samples via hidden unit %d:\n", i)
+				for i := range rbm.H {
 
-			for j := range rbm.H {
-				rbm.H[j] = -1.0
+					fmt.Printf("Visible samples via hidden unit %d:\n", i)
+
+					for j := range rbm.H {
+						rbm.H[j] = -1.0
+					}
+					rbm.H[i] = 1.0
+
+					for t := 0 ; t < 16; t++ {
+
+						rbm.Iterate(4, nil)
+
+						WriteTextSigns(os.Stdout, rbm.V)
+
+						fmt.Print("\n")
+					}
+				}
+
+			case "reconstruct":
+
+				visible, numv := LoadVectors(flag.Arg(1), numv, "Visible")
+
+				rbm := LoadMachine(numv, numh, flag.Arg(2))
+				for i, vis := range visible {
+
+					fmt.Printf("\nSample vector %d\n", i)
+					WriteTextSigns(os.Stdout, vis)
+					fmt.Printf("\n\n")
+
+					for t := 0 ; t < 16; t++ {
+						rbm.Iterate(2, vis)
+						WriteTextSigns(os.Stdout, rbm.V)
+						fmt.Print("\n")
+					}
+				}
+
+			case "sampleup":
+
+				visible, numv := LoadVectors(flag.Arg(1), numv, "Visible")
+
+				rbm := LoadMachine(numv, numh, flag.Arg(2))
+
+				for i, vis := range visible {
+
+					fmt.Printf("Hidden unit samples from visible vector %d:\n", i)
+					WriteTextSigns(os.Stdout, vis)
+					fmt.Print("\n")
+
+					for t := 0 ; t < 16; t++ {
+
+						rbm.Iterate(4, vis)
+
+						WriteTextSigns(os.Stdout, rbm.H)
+						fmt.Print("\n")
+					}
+				}
+
 			}
-			rbm.H[i] = 1.0
-
-			for t := 0 ; t < 16; t++ {
-				
-				rbm.Iterate(4, nil)
-
-				WriteTextSigns(os.Stdout, rbm.V)
-
-				fmt.Print("\n")
-			}
-		}
-
-	case "reconstruct":
-
-		visible, numv := LoadVectors(flag.Arg(1), numv, "Visible")
-		
-		rbm := LoadMachine(numv, numh, flag.Arg(2))
-		for i, vis := range visible {
-			
-			fmt.Printf("\nSample vector %d\n", i)
-			WriteTextSigns(os.Stdout, vis)
-			fmt.Printf("\n\n")
-
-			for t := 0 ; t < 16; t++ {
-				rbm.Iterate(2, vis)
-				WriteTextSigns(os.Stdout, rbm.V)
-				fmt.Print("\n")
-			}
-		}
-
-	case "sampleup":
-
-		visible, numv := LoadVectors(flag.Arg(1), numv, "Visible")
-		
-		rbm := LoadMachine(numv, numh, flag.Arg(2))
-
-		for i, vis := range visible {
-			
-			fmt.Printf("Hidden unit samples from visible vector %d:\n", i)
-			WriteTextSigns(os.Stdout, vis)
-			fmt.Print("\n")
-
-			for t := 0 ; t < 16; t++ {
-
-				rbm.Iterate(4, vis)
-					
-				WriteTextSigns(os.Stdout, rbm.H)
-				fmt.Print("\n")
-			}
-		}
-		
-	}
 		*/
 	}
 }

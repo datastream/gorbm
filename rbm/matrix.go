@@ -7,22 +7,22 @@ import (
 )
 
 const zero = -1.0
-const half = (1+zero)/2
+const half = (1 + zero) / 2
 const one = +1.0
 const bias = 1
 
 type Vector []float64
 
 // from -1 to 1: this is quite deliberate
-func Logistic(x float64) float64{
-	return 2.0 / (1.0 + math.Exp(-x)) - 1.0
+func Logistic(x float64) float64 {
+	return 2.0/(1.0+math.Exp(-x)) - 1.0
 }
 
 func CheckShape(M, x, y Vector) {
-	if len(M) != len(x) * len(y) {
-	panic(
-		fmt.Sprintf("Shape mismatch: matrix %d can't multiple %d into %d",
-			len(M), len(x), len(y)),
+	if len(M) != len(x)*len(y) {
+		panic(
+			fmt.Sprintf("Shape mismatch: matrix %d can't multiple %d into %d",
+				len(M), len(x), len(y)),
 		)
 	}
 }
@@ -32,13 +32,13 @@ func CheckShape(M, x, y Vector) {
 func Transfer(M, x, y Vector) {
 	lenx, leny := len(x), len(y)
 	//CheckShape(M, x, y)
-	for i := 0 ; i < leny ; i++ {
+	for i := 0; i < leny; i++ {
 		y[i] = 0
 	}
 	for i := range M {
 		y[i/lenx] += M[i] * x[i%lenx]
 	}
-	for i := 0 ; i < leny-1 ; i++ {
+	for i := 0; i < leny-1; i++ {
 		y[i] = Logistic(y[i])
 	}
 	y[leny-1] = bias
@@ -54,7 +54,7 @@ func TransferT(M, x, y Vector) {
 	for i := range M {
 		y[i%leny] += M[i] * x[i/leny]
 	}
-	for i := 0 ; i < leny-1 ; i++ {
+	for i := 0; i < leny-1; i++ {
 		y[i] = Logistic(y[i])
 	}
 	x[lenx-1] = bias
@@ -63,7 +63,7 @@ func TransferT(M, x, y Vector) {
 
 func Sample(V, B Vector) {
 	for i, v := range V {
-		if 2 * rand.Float64() - 1 < v {
+		if 2*rand.Float64()-1 < v {
 			B[i] = one
 		} else {
 			B[i] = zero
@@ -75,22 +75,28 @@ func Sample(V, B Vector) {
 func RandomMatrix(n int, sd float64) (M Vector) {
 	M = make(Vector, n)
 	for i := range M {
-		M[i] = rand.NormFloat64()*sd
+		M[i] = rand.NormFloat64() * sd
 	}
 	return
 }
 
-var negstr = []string{"4","3","2","1","-"}
-var posstr = []string{"6","7","8","9","+"}
+var negstr = []string{"4", "3", "2", "1", "-"}
+var posstr = []string{"6", "7", "8", "9", "+"}
 
 func BraillePattern(n int) (str string) {
-	if n == 0 { return "5" }
+	if n == 0 {
+		return "5"
+	}
 	if n > 0 {
-		if n > 4 { n = 4 }
+		if n > 4 {
+			n = 4
+		}
 		str = posstr[n]
 	} else {
 		n *= -1
-		if n > 4 { n = 4 }
+		if n > 4 {
+			n = 4
+		}
 		str = negstr[n]
 	}
 	return str
@@ -104,16 +110,16 @@ func (vec Vector) String() (str string) {
 }
 
 func (vec Vector) MatrixString(n int) (str string) {
-	for i := 0 ; i < len(vec); i += n {
-		str += Vector(vec[i:i+n]).String()
+	for i := 0; i < len(vec); i += n {
+		str += Vector(vec[i : i+n]).String()
 		str += "\n"
 	}
-	return 
+	return
 }
 
 func HammingError(vec1, vec2 Vector) (err float64) {
 	for i := range vec1 {
-		if (vec1[i] - 0.5) * (vec2[i] - 0.5) < 0.001 {
+		if (vec1[i]-0.5)*(vec2[i]-0.5) < 0.001 {
 			err += 1.0
 		}
 	}
@@ -121,9 +127,11 @@ func HammingError(vec1, vec2 Vector) (err float64) {
 }
 
 func RMSError(vec1, vec2 Vector) (err float64) {
-	if len(vec1) != len(vec2) { panic("Different length vectors") }
+	if len(vec1) != len(vec2) {
+		panic("Different length vectors")
+	}
 	for i := range vec1 {
-		f := (vec1[i] - vec2[i])/(1 - zero)
+		f := (vec1[i] - vec2[i]) / (1 - zero)
 		err += f * f
 	}
 	return

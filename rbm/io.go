@@ -1,19 +1,19 @@
 package rbm
 
 import (
-	"os"
-	"io"
 	"fmt"
+	"io"
+	"os"
 	"path"
-	"unsafe"
 	"reflect"
 	"strconv"
+	"unsafe"
 )
 
 func ReadInt(reader io.Reader) int {
 	var b [4]byte
 	reader.Read(b[:])
-	return int(b[0]) + int(b[1]) << 8 + int(b[2]) << 16 + int(b[3]) << 24
+	return int(b[0]) + int(b[1])<<8 + int(b[2])<<16 + int(b[3])<<24
 }
 
 func WriteInt(writer io.Writer, x int) {
@@ -25,9 +25,8 @@ func WriteInt(writer io.Writer, x int) {
 	writer.Write(b[:])
 }
 
-
 func ReadFloats(reader io.Reader, n int) Vector {
-	bytes := make([]byte, n * 8)
+	bytes := make([]byte, n*8)
 	reader.Read(bytes)
 	header := *(*reflect.SliceHeader)(unsafe.Pointer(&bytes))
 	header.Len /= 8
@@ -42,12 +41,11 @@ func WriteFloats(writer io.Writer, slice Vector) {
 	writer.Write(*(*[]byte)(unsafe.Pointer(&header)))
 }
 
-
 func ReadSigns(reader io.Reader, n int) (slice Vector) {
-	temp := make([]byte, (n + 7) / 8)
+	temp := make([]byte, (n+7)/8)
 	reader.Read(temp)
 	for i := range temp {
-		slice[i] = 2.0 * float64(temp[i / 8] >> uint(i % 8)) - 1.0
+		slice[i] = 2.0*float64(temp[i/8]>>uint(i%8)) - 1.0
 	}
 	return
 }
@@ -56,24 +54,31 @@ func WriteSigns(writer io.Writer, slice Vector) {
 	var b byte
 	for i := range slice {
 		b <<= 1
-		if slice[i] > 0.0 { b |= 1 }
-		if i % 8 == 0 || i == len(slice) {
+		if slice[i] > 0.0 {
+			b |= 1
+		}
+		if i%8 == 0 || i == len(slice) {
 			writer.Write([]byte{b})
 		}
 	}
 }
 
-
 func ReadTextSigns(reader io.Reader) (slice Vector) {
 	single := []byte{0}
 	for {
 		n, err := reader.Read(single)
-		if n == 0 || err == io.EOF { return }
+		if n == 0 || err == io.EOF {
+			return
+		}
 		switch single[0] {
-		case '\n': return
-		case '0', '-': slice = append(slice, zero)
-		case '1', '+': slice = append(slice, one)
-		case '?', '.': slice = append(slice, half)
+		case '\n':
+			return
+		case '0', '-':
+			slice = append(slice, zero)
+		case '1', '+':
+			slice = append(slice, one)
+		case '?', '.':
+			slice = append(slice, half)
 		}
 	}
 	return
@@ -83,28 +88,32 @@ func WriteTextSigns(writer io.Writer, slice Vector) {
 	bytes := make([]byte, len(slice)+1)
 	for i, s := range slice {
 		switch {
-		case s > (half+ one)/2: bytes[i] = '1'
-		case s < (half+zero)/2: bytes[i] = '0'
-		default:                bytes[i] = '?'
+		case s > (half+one)/2:
+			bytes[i] = '1'
+		case s < (half+zero)/2:
+			bytes[i] = '0'
+		default:
+			bytes[i] = '?'
 		}
 	}
 	bytes[len(slice)] = '\n'
 	writer.Write(bytes)
 }
 
-
 // this is different from the others in that it doesn't need to know in advance how many elements are in a line
 func ReadTextFloats(reader io.Reader) (slice Vector) {
 	single := []byte{0}
 	buffer := make([]byte, 0, 64) // no float64 will be more than this
-	done := false 
+	done := false
 	for !done {
 		buffer = buffer[:0]
 		for {
 			n, err := reader.Read(single)
-			if n == 0 || err == io.EOF { break }
+			if n == 0 || err == io.EOF {
+				break
+			}
 			switch single[0] {
-			case '\n': 
+			case '\n':
 				done = true
 				goto got_float
 			case '\t':
@@ -113,8 +122,10 @@ func ReadTextFloats(reader io.Reader) (slice Vector) {
 				buffer = append(buffer, single[0])
 			}
 		}
-		got_float:
-		if len(buffer) == 0 { break }
+	got_float:
+		if len(buffer) == 0 {
+			break
+		}
 		f, err := strconv.ParseFloat(string(buffer), 64)
 		if err != nil {
 			panic("Couldn't parse a float")
@@ -124,7 +135,8 @@ func ReadTextFloats(reader io.Reader) (slice Vector) {
 	return
 }
 
-var newline []byte = []byte{'\n'}
+var newline = []byte{'\n'}
+
 func WriteTextFloats(writer io.Writer, data Vector) {
 	for i := range data {
 		if i == 0 {
@@ -136,26 +148,31 @@ func WriteTextFloats(writer io.Writer, data Vector) {
 	writer.Write(newline)
 }
 
-
 func ReadArray(reader io.Reader, format string) (data []Vector) {
 	switch format {
 	case ".sgn", ".flt":
 		n := ReadInt(reader)
 		data = make([]Vector, 0, n)
 		fn := ReadFloats
-		if format == ".sgn" { fn = ReadSigns }
+		if format == ".sgn" {
+			fn = ReadSigns
+		}
 		for i := 0; i < n; i++ {
 			sz := ReadInt(reader)
 			row := fn(reader, sz)
 			data = append(data, row)
 		}
-		
-	case ".txt",".tsv":
+
+	case ".txt", ".tsv":
 		fn := ReadTextFloats
-		if format == ".txt" { fn = ReadTextSigns }
+		if format == ".txt" {
+			fn = ReadTextSigns
+		}
 		for {
 			row := fn(reader)
-			if row == nil { break }
+			if row == nil {
+				break
+			}
 			data = append(data, row)
 		}
 	}
@@ -170,7 +187,7 @@ func WriteArray(writer io.Writer, format string, data []Vector) {
 			WriteInt(writer, len(data[i]))
 			WriteSigns(writer, data[i])
 		}
-	case ".flt":	
+	case ".flt":
 		WriteInt(writer, len(data))
 		for i := range data {
 			WriteInt(writer, len(data[i]))
@@ -185,17 +202,19 @@ func WriteArray(writer io.Writer, format string, data []Vector) {
 			WriteTextFloats(writer, data[i])
 		}
 	default:
-		panic("Unknown array format \"" + format + "\"") 
-	}	
+		panic("Unknown array format \"" + format + "\"")
+	}
 }
 
 func ReadArrayFile(filePath string) (data []Vector) {
 
-	if filePath == "" { return nil }
+	if filePath == "" {
+		return nil
+	}
 
 	file, err := os.Open(filePath)
 	defer file.Close()
-	
+
 	if err != nil {
 		fmt.Printf("Cannot open \"%s\"", filePath)
 		return
@@ -215,8 +234,8 @@ func WriteArrayFile(filePath string, data []Vector) {
 	WriteArray(file, path.Ext(filePath), data)
 }
 
-func LoadVectors(path string, n int, t string) ( []Vector, int ) {
-	
+func LoadVectors(path string, n int, t string) ([]Vector, int) {
+
 	visibles := ReadArrayFile(path)
 
 	if visibles == nil || len(visibles) <= 1 {
@@ -224,7 +243,7 @@ func LoadVectors(path string, n int, t string) ( []Vector, int ) {
 	}
 
 	if n == 0 {
-		n = len(visibles[0])	
+		n = len(visibles[0])
 	} else if n != len(visibles[0]) {
 		panic("--num" + t + " doesn't agree with training vector shape")
 	}
