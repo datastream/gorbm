@@ -1,9 +1,10 @@
 # Example
 
-> Training layer 0: (numv+1) visible units -> x hidden units
+> Training layer 0: numv+1 visible units -> y hidden units
+> visible/hidden units with addtion bias unit, but t.String() will not include bias unit.
 
     weights := []rbm.Vector{
-                rbm.RandomMatrix((numv+1)*x, 0.5),
+                rbm.RandomMatrix((numv+1)*(y+1), 0.5),
     }
 
     // len(training[0]) == numv
